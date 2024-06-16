@@ -104,73 +104,90 @@ class SolarBatteryCalculator(QWidget):
         layout.addWidget(calc_btn)
 
     def setup_solar_section(self, layout, calculation_func):
-        # Capacity and Voltage
-        capacity_layout = QHBoxLayout()
-        capacity_layout.addWidget(QLabel("Enter Solar Panel Capacity (Watts):"))
-        entry_capacity = QLineEdit()
-        capacity_layout.addWidget(entry_capacity)
+        # Panel Vmp and Imp
+        panel_vmp_layout = QHBoxLayout()
+        panel_vmp_layout.addWidget(QLabel("Enter Max Power Voltage (Vmp):"))
+        self.entry_panel_vmp = QLineEdit()
+        panel_vmp_layout.addWidget(self.entry_panel_vmp)
 
-        voltage_layout = QHBoxLayout()
-        voltage_layout.addWidget(QLabel("Enter Solar Panel Voltage (V):"))
-        entry_voltage = QLineEdit()
-        voltage_layout.addWidget(entry_voltage)
+        panel_imp_layout = QHBoxLayout()
+        panel_imp_layout.addWidget(QLabel("Enter Max Power Current (Imp):"))
+        self.entry_panel_imp = QLineEdit()
+        panel_imp_layout.addWidget(self.entry_panel_imp)
 
         # Count and Connection Type
         count_layout = QHBoxLayout()
-        count_layout.addWidget(QLabel("Number of Solar Panels:"))
-        entry_count = QLineEdit()
-        entry_count.textChanged.connect(
+        count_layout.addWidget(QLabel("Number of Panels:"))
+        self.entry_panel_count = QLineEdit()
+        self.entry_panel_count.textChanged.connect(
             lambda: self.update_series_parallel(
-                entry_count, entry_series, entry_parallel, connection_combobox
+                self.entry_panel_count,
+                self.entry_panel_series,
+                self.entry_panel_parallel,
+                self.panel_connection_combobox,
             )
         )
-        count_layout.addWidget(entry_count)
+        count_layout.addWidget(self.entry_panel_count)
 
-        connection_combobox = QComboBox()
-        connection_combobox.addItems(["Parallel", "Series", "Series + Parallel"])
-        connection_combobox.currentIndexChanged.connect(
+        connection_layout = QHBoxLayout()
+        connection_layout.addWidget(QLabel("Connection Type:"))
+        self.panel_connection_combobox = QComboBox()
+        self.panel_connection_combobox.addItems(
+            ["Select", "Series", "Parallel", "Series + Parallel"]
+        )
+        self.panel_connection_combobox.currentIndexChanged.connect(
             lambda: self.update_series_parallel(
-                entry_count, entry_series, entry_parallel, connection_combobox
+                self.entry_panel_count,
+                self.entry_panel_series,
+                self.entry_panel_parallel,
+                self.panel_connection_combobox,
             )
         )
+        connection_layout.addWidget(self.panel_connection_combobox)
 
-        # Series and Parallel Entry
-        series_parallel_layout = QFormLayout()
-        entry_series = QLineEdit()
-        entry_parallel = QLineEdit()
-        series_parallel_layout.addRow("In Series:", entry_series)
-        series_parallel_layout.addRow("In Parallel:", entry_parallel)
-        entry_series.setVisible(False)
-        entry_parallel.setVisible(False)
+        # Series and Parallel Counts
+        series_parallel_layout = QHBoxLayout()
+        series_parallel_layout.addWidget(QLabel("Series Count:"))
+        self.entry_panel_series = QLineEdit()
+        series_parallel_layout.addWidget(self.entry_panel_series)
+        self.entry_panel_series.setVisible(False)
 
-        # Result Labels
-        result_capacity_label = QLabel("Total Solar Panel Capacity:")
-        result_voltage_label = QLabel("Total Solar Panel Voltage:")
-        result_amps_label = QLabel("Total Solar Panel Amps:")
-        calc_btn = QPushButton("Calculate Solar Panel Output", self)
-        calc_btn.clicked.connect(
+        series_parallel_layout.addWidget(QLabel("Parallel Count:"))
+        self.entry_panel_parallel = QLineEdit()
+        series_parallel_layout.addWidget(self.entry_panel_parallel)
+        self.entry_panel_parallel.setVisible(False)
+
+        # Results
+        self.result_capacity_label = QLabel("")
+        self.result_voltage_label = QLabel("")
+        self.result_amps_label = QLabel("")
+
+        # Calculate Button
+        calculate_btn = QPushButton("Calculate Solar", self)
+        calculate_btn.clicked.connect(
             lambda: calculation_func(
-                entry_capacity,
-                entry_voltage,
-                entry_count,
-                connection_combobox,
-                entry_series,
-                entry_parallel,
-                result_capacity_label,
-                result_voltage_label,
-                result_amps_label,
+                self.entry_panel_vmp,
+                self.entry_panel_imp,
+                self.entry_panel_count,
+                self.panel_connection_combobox,
+                self.entry_panel_series,
+                self.entry_panel_parallel,
+                self.result_capacity_label,
+                self.result_voltage_label,
+                self.result_amps_label,
             )
         )
 
-        layout.addLayout(capacity_layout)
-        layout.addLayout(voltage_layout)
+        # Add widgets to layout
+        layout.addLayout(panel_vmp_layout)
+        layout.addLayout(panel_imp_layout)
         layout.addLayout(count_layout)
-        layout.addWidget(connection_combobox)
+        layout.addLayout(connection_layout)
         layout.addLayout(series_parallel_layout)
-        layout.addWidget(result_capacity_label)
-        layout.addWidget(result_voltage_label)
-        layout.addWidget(result_amps_label)
-        layout.addWidget(calc_btn)
+        layout.addWidget(calculate_btn)
+        layout.addWidget(self.result_capacity_label)
+        layout.addWidget(self.result_voltage_label)
+        layout.addWidget(self.result_amps_label)
 
     def calculate_battery_details(
         self,
@@ -222,8 +239,8 @@ class SolarBatteryCalculator(QWidget):
 
     def calculate_solar_output(
         self,
-        entry_capacity,
-        entry_voltage,
+        entry_vmp,
+        entry_imp,
         entry_count,
         connection_combobox,
         entry_series,
@@ -233,8 +250,8 @@ class SolarBatteryCalculator(QWidget):
         result_amps_label,
     ):
         try:
-            capacity = float(entry_capacity.text())
-            voltage = float(entry_voltage.text())
+            vmp = float(entry_vmp.text())
+            imp = float(entry_imp.text())
             count = int(entry_count.text())
             series_count = (
                 int(entry_series.text()) if entry_series.isVisible() else count
@@ -244,27 +261,29 @@ class SolarBatteryCalculator(QWidget):
             )
 
             if connection_combobox.currentText() == "Parallel":
-                total_capacity = capacity * count
-                total_voltage = voltage
-                total_amps = total_capacity / total_voltage
+                total_vmp = vmp  # Voltage remains the same
+                total_imp = imp * count  # Currents summed
+                total_capacity = total_vmp * total_imp  # Power calculation
             elif connection_combobox.currentText() == "Series":
-                total_capacity = capacity
-                total_voltage = voltage * count
-                total_amps = total_capacity / total_voltage
+                total_vmp = vmp * count  # Voltages summed
+                total_imp = imp  # Current remains the same
+                total_capacity = total_vmp * total_imp  # Power calculation
             elif connection_combobox.currentText() == "Series + Parallel":
-                total_capacity = capacity * parallel_count
-                total_voltage = voltage * series_count
-                total_amps = total_capacity / total_voltage
+                total_vmp = vmp * series_count  # Sum of voltages in series
+                total_imp = imp * parallel_count  # Sum of currents in parallel
+                total_capacity = total_vmp * total_imp  # Power calculation
             else:
                 raise ValueError("Invalid connection type.")
 
             result_capacity_label.setText(
-                f"Total Solar Panel Capacity: {total_capacity} Watts"
+                f"Total Solar Panel Capacity: {total_capacity:.2f} Watts"
             )
             result_voltage_label.setText(
-                f"Total Solar Panel Voltage: {total_voltage} V"
+                f"Total Solar Panel Voltage (Vmp): {total_vmp:.2f} V"
             )
-            result_amps_label.setText(f"Total Solar Panel Amps: {total_amps:.2f} A")
+            result_amps_label.setText(
+                f"Total Solar Panel Current (Imp): {total_imp:.2f} A"
+            )
         except ValueError as e:
             result_capacity_label.setText("Error: " + str(e))
             result_voltage_label.setText("")
