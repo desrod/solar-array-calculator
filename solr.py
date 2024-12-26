@@ -227,11 +227,16 @@ class SolarBatteryCalculator(QWidget):
             else:
                 raise ValueError("Invalid connection type.")
 
+            total_watt_hours = total_capacity * total_voltage
+
             result_capacity_label.setText(
                 f"Total Battery Capacity: {total_capacity} Ah"
             )
             result_voltage_label.setText(f"Total Battery Voltage: {total_voltage} V")
-            result_amps_label.setText(f"Total Battery Amps: {total_amps:.2f} A")
+            result_amps_label.setText(
+                f"Total Battery Amps: {total_amps:.2f} A\n\n"
+                f"Total Battery Energy: {total_watt_hours:.2f} Wh"
+            )
         except ValueError as e:
             result_capacity_label.setText("Error: " + str(e))
             result_voltage_label.setText("")
