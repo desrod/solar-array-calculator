@@ -78,6 +78,7 @@ class SolarBatteryCalculator(QWidget):
         result_capacity_label = QLabel("Total Battery Capacity:")
         result_voltage_label = QLabel("Total Battery Voltage:")
         result_amps_label = QLabel("Total Battery Amps:")
+        result_watts_label = QLabel("Total Battery Energy:")
         calc_btn = QPushButton("Calculate Battery Details", self)
         calc_btn.clicked.connect(
             lambda: calculation_func(
@@ -90,6 +91,7 @@ class SolarBatteryCalculator(QWidget):
                 result_capacity_label,
                 result_voltage_label,
                 result_amps_label,
+                result_watts_label,
             )
         )
 
@@ -101,6 +103,7 @@ class SolarBatteryCalculator(QWidget):
         layout.addWidget(result_capacity_label)
         layout.addWidget(result_voltage_label)
         layout.addWidget(result_amps_label)
+        layout.addWidget(result_watts_label)
         layout.addWidget(calc_btn)
 
     def setup_solar_section(self, layout, calculation_func):
@@ -200,6 +203,7 @@ class SolarBatteryCalculator(QWidget):
         result_capacity_label,
         result_voltage_label,
         result_amps_label,
+        result_watts_label,
     ):
         try:
             capacity = float(entry_capacity.text())
@@ -233,14 +237,16 @@ class SolarBatteryCalculator(QWidget):
                 f"Total Battery Capacity: {total_capacity} Ah"
             )
             result_voltage_label.setText(f"Total Battery Voltage: {total_voltage} V")
-            result_amps_label.setText(
-                f"Total Battery Amps: {total_amps:.2f} A\n\n"
+            result_amps_label.setText(f"Total Battery Amps: {total_amps:.2f} A")
+            result_watts_label.setText(
                 f"Total Battery Energy: {total_watt_hours:.2f} Wh"
             )
+
         except ValueError as e:
             result_capacity_label.setText("Error: " + str(e))
             result_voltage_label.setText("")
             result_amps_label.setText("")
+            result_watts_label.setText("")
 
     def calculate_solar_output(
         self,
@@ -253,6 +259,7 @@ class SolarBatteryCalculator(QWidget):
         result_capacity_label,
         result_voltage_label,
         result_amps_label,
+        result_watts_label,
     ):
         try:
             vmp = float(entry_vmp.text())
